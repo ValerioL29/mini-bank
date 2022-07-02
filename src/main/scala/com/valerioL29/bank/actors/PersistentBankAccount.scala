@@ -4,6 +4,8 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior}
 
+import scala.util.{Failure, Success, Try}
+
 /**
  * A single bank account
  */
@@ -32,7 +34,7 @@ object PersistentBankAccount {
   sealed trait Response
   object Response {
     case class BankAccountCreatedResponse(id: String) extends Response
-    case class BankAccountBalanceUpdatedResponse(maybeBankAccount: Option[BankAccount]) extends Response
+    case class BankAccountBalanceUpdatedResponse(maybeBankAccount: Try[BankAccount]) extends Response
     case class GetBankAccountResponse(maybeBankAccount: Option[BankAccount]) extends Response
   }
 
@@ -44,9 +46,9 @@ object PersistentBankAccount {
    */
   import Command._
   import Response._
-  val commandHandler: (BankAccount, Command) => Effect[Event, BankAccount] = (state, command) => command match {
+  val commandHandler: (BankAccount, Command) => Effect[Event, BankAccount] = (state: BankAccount, command: Command) => command match {
     case CreateBankAccount(user, currency, initialBalance, bank) =>
-      val id = state.id
+      val id: String = state.id
 
       /**
        * 1. bank creates me
@@ -58,20 +60,21 @@ object PersistentBankAccount {
        */
       Effect
         .persist(BankAccountCreated(BankAccount(id, user, currency, initialBalance))) // persisted into Cassandra
-        .thenReply(bank)(_ => BankAccountCreatedResponse(id))
+        .thenReply(bank)((_: BankAccount) => BankAccountCreatedResponse(id))
     case UpdateBalance(_, _, amount, bank) =>
-      val newBalance = state.balance + amount
+      val newBalance: Double = state.balance + amount
       // check here for withDrawl
       if (newBalance < 0) //illegal
-        Effect.reply(bank)(BankAccountBalanceUpdatedResponse(None))
+        Effect
+          .reply(bank)(BankAccountBalanceUpdatedResponse(Failure(new RuntimeException("Cannot withdraw more than available"))))
       else
         Effect
           .persist(BalanceUpdated(amount))
-          .thenReply(bank)(newState => BankAccountBalanceUpdatedResponse(Some(newState)))
+          .thenReply(bank)((newState: BankAccount) => BankAccountBalanceUpdatedResponse(Success(newState)))
     case GetBankAccount(_, bank) =>
       Effect.reply(bank)(GetBankAccountResponse(Some(state)))
   }
-  val eventHandler: (BankAccount, Event) => BankAccount = (state, event) => event match {
+  val eventHandler: (BankAccount, Event) => BankAccount = (state: BankAccount, event: Event) => event match {
     case BankAccountCreated(bankAccount) => bankAccount
     case BalanceUpdated(amount) => state.copy(balance = state.balance + amount)
   }

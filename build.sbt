@@ -1,10 +1,10 @@
+name            := "akka-cassandra-mini-bank"
+version         := "0.7.1"
+scalaVersion    := "2.13.8"
+
 lazy val akkaHttpVersion = "10.2.9"
 lazy val akkaVersion     = "2.6.19"
-lazy val circeVersion    = "0.14.1"
-
-scalaVersion    := "2.13.8"
-name := "akka-cassandra-mini-bank"
-version := "0.1.0-SNAPSHOT"
+lazy val circeVersion    = "0.14.2"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http"                  % akkaHttpVersion,
@@ -14,7 +14,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-cluster"               % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-tools"         % akkaVersion,
   "com.typesafe.akka" %% "akka-coordination"          % akkaVersion,
-  "com.datastax.oss"  %  "java-driver-core"           % "4.13.0",   // See https://github.com/akka/alpakka/issues/2556
+  "com.datastax.oss"  %  "java-driver-core"           % "4.13.0",       // See https://github.com/akka/alpakka/issues/2556
   "com.typesafe.akka" %% "akka-persistence-cassandra" % "1.0.5",
   "io.circe"          %% "circe-core"                 % circeVersion,
   "io.circe"          %% "circe-generic"              % circeVersion,
@@ -24,6 +24,6 @@ libraryDependencies ++= Seq(
 
   "com.typesafe.akka" %% "akka-http-testkit"          % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-actor-testkit-typed"   % akkaVersion     % Test,
-  "org.scalatest"     %% "scalatest"                  % "3.2.11"        % Test
+  "org.scalatest"     %% "scalatest"                  % "3.2.12"        % Test
 )
 
